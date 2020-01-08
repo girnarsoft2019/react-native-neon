@@ -1,37 +1,37 @@
 import React from 'react';
-import { CameraRoll, Image, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
-import NaviBar, { getSafeAreaInset } from 'react-native-pure-navigation-bar';
+import {
+    CameraRoll,
+    Image,
+    FlatList,
+    Platform,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+    Dimensions,
+    SafeAreaView,
+    BackHandler,
+} from 'react-native';
 import PageKeys from './PageKeys';
 import {NeonHandler} from "./NeonHandler";
+import * as Strings from './values/Strings';
+import ActionBarWrapper from './ActionBarWrapper';
+import * as Utility from './Utility';
 
+let self;
 export default class extends React.PureComponent {
-    static defaultProps = {
-        maxSize: 1,
-        autoConvertPath: false,
-        assetType: 'Photos',
-        groupTypes: 'All',
-        okLabel: 'OK',
-        cancelLabel: 'Cancel',
-        deleteLabel: 'Delete',
-        useVideoLabel: 'Use Video',
-        usePhotoLabel: 'Use Photo',
-        previewLabel: 'Preview',
-        choosePhotoTitle: 'Choose Photo',
-        maxSizeChooseAlert: (number) => 'You can only choose ' + number + ' photos at most',
-        maxSizeTakeAlert: (number) => 'You can only take ' + number + ' photos at most',
-        supportedOrientations: ['portrait', 'landscape']
-    };
 
     constructor(props) {
         super(props);
-        //this.options = NeonHandler.getOptions();
+        self = this;
         this.state = {
             data: [],
-            selectedItems: [],
+            selectedItems: NeonHandler.getOptions().selectedImages ? [...NeonHandler.getOptions().selectedImages] : [],
         };
     }
 
     componentDidMount() {
+        BackHandler.addEventListener('hardwareBackPress', this.handleBackButtonClick);
         Dimensions.addEventListener('change', this._onWindowChanged);
         CameraRoll.getPhotos({
             first: 1000000,
@@ -70,39 +70,87 @@ export default class extends React.PureComponent {
     }
 
     componentWillUnmount() {
+        BackHandler.removeEventListener('hardwareBackPress', this.handleBackButtonClick);
         Dimensions.removeEventListener('change', this._onWindowChanged);
     }
 
+    handleBackButtonClick = () => {
+        this.onBackPress();
+        return true;
+    };
+
+    onBackPress = () => {
+        if (NeonHandler.getOptions().initialRoute === PageKeys.album_list) {
+            Utility.checkForReturn(self.returnDataToApp);
+        } else {
+            self.props.navigation.goBack();
+        }
+    };
+
+    returnDataToApp = (fromBack) => {
+        NeonHandler.getOptions().callback && NeonHandler.getOptions().callback(Utility.prepareReturnData(fromBack));
+        self.props.navigation.goBack();
+
+    };
+
+    _clickOk = () => {
+        NeonHandler.changeSelectedImages(this.state.selectedItems);
+        switch (NeonHandler.getOptions().initialRoute) {
+            case PageKeys.neutral:
+                this.props.navigation.state.params.onDoneFromGallery && this.props.navigation.state.params.onDoneFromGallery();
+                this.props.navigation.goBack();
+                break;
+            case PageKeys.camera:
+                break;
+            case PageKeys.album_list:
+                self.returnDataToApp(false);
+                break;
+        }
+    };
+
+    onCameraPress = () => {
+
+    }
+
     render() {
-        const safeArea = getSafeAreaInset();
-        const style = {
-            paddingLeft: safeArea.left,
-            paddingRight: safeArea.right,
-            paddingBottom: safeArea.bottom,
+        let actionBarProps = {
+            values: {title: Strings.GALLERY},
+            rightIcons: [{
+                image: require('./images/check_box.png'),
+                onPress: this._clickOk
+            }],
+            styleAttr: {
+                leftIconImage: require('./images/back.png')
+            }
+            ,
+            actions: {
+                onLeftPress: this.onBackPress
+            }
         };
         return (
-            <View style={styles.view}>
-                <NaviBar
-                    title={NeonHandler.getOptions().choosePhotoTitle}
-                    leftElement={[]}
-                    rightElement={NeonHandler.getOptions().cancelLabel}
-                    onRight={this._clickCancel}
-                />
-                <FlatList
-                    style={[styles.listView, style]}
-                    data={this.state.data}
-                    renderItem={this._renderItem}
-                    keyExtractor={(item) => item.name}
-                    extraData={this.state}
-                />
-            </View>
+            <SafeAreaView style={{flex:1}}>
+                <View style={styles.view}>
+                    <ActionBarWrapper
+                        values={actionBarProps.values}
+                        actions={actionBarProps.actions}
+                        iconMap={actionBarProps.rightIcons}
+                        styleAttributes={actionBarProps.styleAttr}/>
+                    <FlatList
+                        style={[styles.listView]}
+                        data={this.state.data}
+                        renderItem={this._renderItem}
+                        keyExtractor={(item) => item.name}
+                        extraData={this.state}
+                    />
+                </View>
+            </SafeAreaView>
         );
     }
 
     _renderItem = ({item}) => {
         const itemUris = new Set(item.value.map(i => i.uri));
         const selectedItems = this.state.selectedItems
-            .filter(i => itemUris.has(i.uri));
+            .filter(i => itemUris.has(i.filePath));
         const selectedCount = selectedItems.length;
         return (
             <TouchableOpacity onPress={this._clickRow.bind(this, item)}>
@@ -133,12 +181,9 @@ export default class extends React.PureComponent {
         );
     };
 
-    _onBackFromAlbum = (items) => {
+    _onDoneFromAlbum = (items) => {
+        console.log(JSON.stringify(items));
         this.setState({selectedItems: [...items]});
-    };
-
-    _clickCancel = () => {
-        this.props.callback && this.props.callback([]);
     };
 
     _clickRow = (item) => {
@@ -146,8 +191,8 @@ export default class extends React.PureComponent {
             ...this.props,
             groupName: item.name,
             photos: item.value,
-            selectedItems: this.state.selectedItems,
-            onBack: this._onBackFromAlbum,
+            onDonePress: this._onDoneFromAlbum,
+            selectedItems: this.state.selectedItems
         });
     };
 

@@ -16,7 +16,7 @@ const stackNavigator = createStackNavigator({
     app1: {screen: App1, navigationOptions: {header: null}},
     app2: {screen: App2, navigationOptions: {header: null}},
     app3: {screen: App3, navigationOptions: {header: null}},
-    neon: {screen: ImagePicker.neonNavigator, navigationOptions: {header: null}}
+    ...ImagePicker.neonNavigator
 });
 
 const AppContainer = createAppContainer(stackNavigator);

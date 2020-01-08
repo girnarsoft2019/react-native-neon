@@ -1,69 +1,82 @@
 import React from 'react';
-import RootSiblings from 'react-native-root-siblings';
 import PageKeys from './PageKeys';
-import PhotoModalPage from './PhotoModalPage';
 import CameraView from './CameraView';
 import AlbumListView from './AlbumListView';
 import AlbumView from './AlbumView';
 import NeutralView from './NeutralView';
-import PreviewMultiView from './PreviewMultiView';
-import {createStackNavigator} from "react-navigation";
-import {NeonHandler} from "./NeonHandler";
+import ImageReviewView from './ImageReviewView';
+import {NeonHandler} from './NeonHandler';
 
-import App from '../App';
-import App1 from '../App1';
-import App2 from '../App2';
-import App3 from '../App3';
+export const LIBRARY_MODE = {
+    SOFT: 0,
+    HARD: 1,
+};
 
-/**
- * --OPTIONS--
- * maxSize?: number. Camera or Video.
- * sideType?: RNCamera.Constants.Type. Camera or Video.
- * flashMode?: RNCamera.Constants.FlashMode. Camera or Video.
- * pictureOptions?: RNCamera.PictureOptions. Camera.
- * recordingOptions?: RNCamera.RecordingOptions Video.
- * callback: (data: any[]) => void. Donot use Alert.
- */
-export const neonNavigator = createStackNavigator({
+export const RESPONSE_CODE = {
+    BACK_PRESSED: 0,
+    SUCCESS: 1,
+};
+
+export const IMAGE_SOURCE = {
+    CAMERA: 'Camera',
+    GALLERY: 'Gallery',
+};
+
+export const CAMERA_TYPE = {
+    REAR: 0,
+    FRONT: 1,
+};
+
+export const ORIENTATION = {
+    PORTRAIT: 0,
+    LANDSCAPE: 1,
+};
+
+export const FLASH_MODE = {
+    AUTO: 0,
+    ON: 1,
+    OFF: 2,
+};
+
+export const neonNavigator = {
     [PageKeys.camera]: {screen: CameraView, navigationOptions: {header: null}},
     [PageKeys.album_list]: {screen: AlbumListView, navigationOptions: {header: null}},
     [PageKeys.album_view]: {screen: AlbumView, navigationOptions: {header: null}},
-    [PageKeys.preview]: {screen: PreviewMultiView, navigationOptions: {header: null}},
-    [PageKeys.neutral]: {screen: NeutralView, navigationOptions: {header: null}}
-});
+    [PageKeys.neutral]: {screen: NeutralView, navigationOptions: {header: null}},
+    [PageKeys.image_review]: {screen: ImageReviewView, navigationOptions: {header: null}},
+};
 
-export const getCamera = (options) => showImagePicker(PageKeys.camera, {...options, isVideo: false});
-export const getVideo = (options) => showImagePicker(PageKeys.camera, {...options, isVideo: true});
-export const getAlbum = (options) => showImagePicker(PageKeys.album_list, options);
-export const openNeutral = (options) => showImagePicker(PageKeys.neutral, options);
+export const openCamera = (options) => showImagePicker({...options, initialRoute: PageKeys.camera});
+export const openGallery = (options) => showImagePicker({...options, initialRoute: PageKeys.album_list});
+export const openNeutral = (options) => showImagePicker({...options, initialRoute: PageKeys.neutral});
 
-let sibling = null;
-
-function showImagePicker(initialRouteName, options) {
-    NeonHandler.initialize();
-    console.log(JSON.stringify(options))
-    if(options.navigation && options.resultRoute && options.callback){
-        options.navigation.navigate(initialRouteName);
+function showImagePicker(options) {
+    NeonHandler.clearInstance();
+    NeonHandler.initialize(options, options.alreadyAddedImages);
+    console.log(JSON.stringify(NeonHandler.getOptions()));
+    if (options.navigation && options.initialRoute && options.callback) {
+        options.navigation.navigate(options.initialRoute);
     }
-    /*if (sibling) {
-        return null;
-    }
-    sibling = new RootSiblings(
-        <PhotoModalPage
-            initialRouteName={initialRouteName}
-            onDestroy={() => {
-                sibling && sibling.destroy();
-                sibling = null;
-            }}
-            {...options}
-        />
-    );*/
 }
 
-export {
-    PhotoModalPage,
-    CameraView,
-    PreviewMultiView,
-    AlbumListView,
-    AlbumView,
-};
+/*
+* private String filePath;
+    private FILE_TYPE type;
+    private String fileName;
+    private String displayName;
+    private boolean selected;
+    private SOURCE source;
+    private int fileCount;
+    private String dateTimeTaken;
+    private ImageTagModel fileTag;
+    private String latitude;
+    private String longitude;
+    private String timestamp;*/
+
+/*private String tagName;
+    private boolean mandatory;
+    private String tagId;
+    private int numberOfPhotos;
+    private Location location;
+    private String tagPreviewUrl;*/
+

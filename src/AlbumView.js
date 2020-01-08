@@ -1,60 +1,118 @@
 import React from 'react';
-import { Alert, Dimensions, FlatList, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import NaviBar, { getSafeAreaInset } from 'react-native-pure-navigation-bar';
-import * as RNFS from 'react-native-fs';
-import PageKeys from './PageKeys';
-import {NeonHandler} from "./NeonHandler";
+import {
+    Alert, BackHandler,
+    Dimensions,
+    FlatList,
+    Image,
+    Platform,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import {NeonHandler} from './NeonHandler';
+import ActionBarWrapper from './ActionBarWrapper';
+import {FileInfo} from './FileInfo';
+import Toast from 'react-native-simple-toast';
+import * as ImagePicker from './index';
+import Exif from 'react-native-exif'
 
+let self;
 export default class extends React.PureComponent {
     constructor(props) {
         super(props);
+        self = this;
         this.state = {
-            selectedItems: [...this.props.navigation.state.params.selectedItems],
+            selectedItems: JSON.parse(JSON.stringify(props.navigation.state.params.selectedItems)),
+            changedImages: [],
         };
     }
 
     componentDidMount() {
+        BackHandler.addEventListener('hardwareBackPress', this.handleBackButtonClick);
         Dimensions.addEventListener('change', this._onWindowChanged);
     }
 
     componentWillUnmount() {
+        BackHandler.removeEventListener('hardwareBackPress', this.handleBackButtonClick);
         Dimensions.removeEventListener('change', this._onWindowChanged);
     }
 
+    handleBackButtonClick = () => {
+        this.onBackPress();
+        return true;
+    };
+
+    onBackPress = () => {
+        /*if (this.state.selectedItems.length === NeonHandler.getOptions().selectedImages.length) {
+            if (this.state.changedImages.length !== 0) {
+                this.showBackAlert();
+                return;
+            }
+        } else {
+            this.showBackAlert();
+            return;
+        }*/
+        this.props.navigation.goBack();
+    };
+
+    showBackAlert = () => {
+        Alert.alert(NeonHandler.getOptions().galleryBackAlertTitle, '', [
+            {
+                text: NeonHandler.getOptions().yesLabel,
+                onPress: () => {
+                    self.props.navigation.goBack();
+                },
+            }, {
+                text: NeonHandler.getOptions().cancelLabel,
+                onPress: () => {
+                },
+            },
+        ], {cancelable: true});
+    };
+
     render() {
-        const safeArea = getSafeAreaInset();
-        const style = {
-            paddingLeft: safeArea.left,
-            paddingRight: safeArea.right,
+        let actionBarProps = {
+            values: {title: this.props.navigation.state.params.groupName},
+            rightIcons: [{
+                image: require('./images/check_box.png'),
+                onPress: this._clickOk,
+            }],
+            styleAttr: {
+                leftIconImage: require('./images/back.png'),
+            }
+            ,
+            actions: {
+                onLeftPress: this.onBackPress,
+            },
         };
         return (
-            <View style={styles.view}>
-                <NaviBar
-                    title={this.props.navigation.state.params.groupName}
-                    onLeft={this._clickBack}
-                    rightElement={NeonHandler.getOptions().cancelLabel}
-                    onRight={this._onFinish.bind(this, [])}
-                />
-                <FlatList
-                    key={this._column()}
-                    style={[styles.list, style]}
-                    renderItem={this._renderItem}
-                    data={this.props.navigation.state.params.photos}
-                    keyExtractor={item => item.uri}
-                    numColumns={this._column()}
-                    extraData={this.state}
-                />
-                {this._renderBottomView()}
-            </View>
+            <SafeAreaView style={{flex: 1}}>
+                <View style={styles.view}>
+                    <ActionBarWrapper
+                        values={actionBarProps.values}
+                        actions={actionBarProps.actions}
+                        iconMap={actionBarProps.rightIcons}
+                        styleAttributes={actionBarProps.styleAttr}/>
+                    <FlatList
+                        key={this._column()}
+                        style={[styles.list]}
+                        renderItem={this._renderItem}
+                        data={this.props.navigation.state.params.photos}
+                        keyExtractor={item => item.uri}
+                        numColumns={this._column()}
+                        extraData={this.state}
+                    />
+                </View>
+            </SafeAreaView>
         );
     }
 
     _renderItem = ({item, index}) => {
-        const safeArea = getSafeAreaInset();
-        const edge = (Dimensions.get('window').width - safeArea.left - safeArea.right) / this._column() - 2;
-        const isSelected = this.state.selectedItems.some(obj => obj.uri === item.uri);
-        const backgroundColor = isSelected ? '#e15151' : 'transparent';
-        const hasIcon = isSelected || this.state.selectedItems.length < NeonHandler.getOptions().maxSize;
+        const edge = (Dimensions.get('window').width) / this._column() - 2;
+        const isSelected = this.state.selectedItems.some(obj => obj.filePath === item.uri);
+        const backgroundColor = isSelected ? NeonHandler.getOptions().colorPrimary : 'transparent';
         return (
             <TouchableOpacity onPress={this._clickCell.bind(this, item)}>
                 <View style={{padding: 1}}>
@@ -64,147 +122,68 @@ export default class extends React.PureComponent {
                         style={{width: edge, height: edge, overflow: 'hidden'}}
                         resizeMode='cover'
                     />
-                    {hasIcon && (
-                        <View style={styles.selectView}>
-                            <View style={[styles.selectIcon, {backgroundColor}]}>
-                                {isSelected && (
-                                    <Image
-                                        source={require('./images/check_box.png')}
-                                        style={styles.selectedIcon}
-                                    />
-                                )}
-                            </View>
+                    {isSelected && <View style={styles.selectView}>
+                        <View style={[styles.selectIcon, {backgroundColor}]}>
+                            <Image
+                                source={require('./images/check_box.png')}
+                                style={styles.selectedIcon}
+                            />
                         </View>
-                    )}
+                    </View>}
                 </View>
             </TouchableOpacity>
         );
     };
 
-    _renderBottomView = () => {
-        const previewButton = this.state.selectedItems.length > 0 ? NeonHandler.getOptions().previewLabel : '';
-        const okButton = NeonHandler.getOptions().okLabel + ' (' + this.state.selectedItems.length + '/' + NeonHandler.getOptions().maxSize + ')';
-        const safeArea = getSafeAreaInset();
-        return (
-            <View style={[styles.bottom, {marginBottom: safeArea.bottom}]}>
-                <TouchableOpacity onPress={this._clickPreview}>
-                    <Text style={styles.previewButton}>
-                        {previewButton}
-                    </Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={this._clickOk}>
-                    <Text style={styles.okButton}>
-                        {okButton}
-                    </Text>
-                </TouchableOpacity>
-            </View>
-        );
+    removeFromChangedImages = (itemuri) => {
+        let changedImages = this.state.changedImages.filter(item => item.filePath !== itemuri.uri);
+        this.state.changedImages = [...changedImages];
     };
 
-    _onFinish = (data) => {
-        if (NeonHandler.getOptions().autoConvertPath && Platform.OS === 'ios') {
-            const promises = data.map((item, index) => {
-                const {uri} = item;
-                const params = uri.split('?');
-                if (params.length < 1) {
-                    throw new Error('Unknown URI：' + uri);
-                }
-                const keyValues = params[1].split('&');
-                if (keyValues.length < 2) {
-                    throw new Error('Unknown URI：' + uri);
-                }
-                const kvMaps = keyValues.reduce((prv, cur) => {
-                    const kv = cur.split('=');
-                    prv[kv[0]] = kv[1];
-                    return prv;
-                }, {});
-                const itemId = kvMaps.id;
-                const ext = kvMaps.ext.toLowerCase();
-                const destPath = RNFS.CachesDirectoryPath + '/' + itemId + '.' + ext;
-                let promise;
-                if (item.type === 'ALAssetTypePhoto') {
-                    promise = RNFS.copyAssetsFileIOS(uri, destPath, 0, 0);
-                } else if (item.type === 'ALAssetTypeVideo') {
-                    promise = RNFS.copyAssetsVideoIOS(uri, destPath);
-                } else {
-                    throw new Error('Unknown URI：' + uri);
-                }
-                return promise
-                    .then((resultUri) => {
-                        data[index].uri = resultUri;
-                    });
-            });
-            Promise.all(promises)
-                .then(() => {
-                    this.props.callback && this.props.callback(data);
-                });
-        } else if (NeonHandler.getOptions().autoConvertPath && Platform.OS === 'android') {
-            const promises = data.map((item, index) => {
-                return RNFS.stat(item.uri)
-                    .then((result) => {
-                        data[index].uri = result.originalFilepath;
-                    });
-            });
-            Promise.all(promises)
-                .then(() => {
-                    this.props.callback && this.props.callback(data);
-                });
-        } else {
-            this.props.callback && this.props.callback(data);
-        }
-    };
-
-    _onDeletePageFinish = (data) => {
-        const selectedItems = this.state.selectedItems
-            .filter(item => data.indexOf(item.uri) >= 0);
-        this.setState({selectedItems});
-    };
-
-    _clickBack = () => {
-        this.props.navigation.state.params.onBack && this.props.navigation.state.params.onBack(this.state.selectedItems);
-    };
-
-    _clickCell = (itemuri) => {
-        const isSelected = this.state.selectedItems.some(item => item.uri === itemuri.uri);
+    _clickCell = async (itemuri) => {
+        const isSelected = this.state.selectedItems.some(item => item.filePath === itemuri.uri);
         if (isSelected) {
-            const selectedItems = this.state.selectedItems.filter(item => item.uri !== itemuri.uri);
+            const selectedItems = this.state.selectedItems.filter(item => item.filePath !== itemuri.uri);
             this.setState({
-                selectedItems: [...selectedItems]
+                selectedItems: [...selectedItems],
             });
-        } else if (this.state.selectedItems.length >= NeonHandler.getOptions().maxSize) {
-            Alert.alert('', NeonHandler.getOptions().maxSizeChooseAlert(NeonHandler.getOptions().maxSize));
+            this.removeFromChangedImages(itemuri);
+        } else if (NeonHandler.getOptions().maxSize !== 0 && this.state.selectedItems.length >= NeonHandler.getOptions().maxSize) {
+            Toast.show(NeonHandler.getOptions().maxSizeChooseAlert(NeonHandler.getOptions().maxSize), Toast.SHORT);
         } else {
-            this.setState({
-                selectedItems: [...this.state.selectedItems, itemuri]
-            });
-        }
-    };
+            let allowed = true;
+            if (NeonHandler.getOptions().folderRestriction) {
+                await Exif.getExif(itemuri.uri).then(data => {
+                    console.log(JSON.stringify(data));
+                    allowed = data.exif && data.exif.Make && data.exif.Make == NeonHandler.getOptions().appName;
+                }).catch(error => {
+                    allowed = false
+                })
+            }
+            if(allowed){
+                let fileInfo = {...FileInfo};
+                fileInfo.filePath = itemuri.uri;
+                fileInfo.source = ImagePicker.IMAGE_SOURCE.GALLERY;
+                this.setState({
+                    selectedItems: [...this.state.selectedItems, fileInfo],
+                    changedImages: [...this.state.changedImages, fileInfo],
+                });
+            }else {
+                Toast.show(NeonHandler.getOptions().folderRestrictionErrorMsg, Toast.SHORT);
+            }
 
-    _clickPreview = () => {
-        if (this.state.selectedItems.length > 0) {
-            this.props.navigation.navigate(PageKeys.preview, {
-                ...this.props,
-                images: this.state.selectedItems.map(item => item.uri),
-                callback: this._onDeletePageFinish,
-            });
         }
     };
 
     _clickOk = () => {
-        if (this.state.selectedItems.length > 0) {
-            this._onFinish(this.state.selectedItems);
+        if (this.props.navigation.state.params.onDonePress) {
+            this.props.navigation.state.params.onDonePress(this.state.selectedItems);
+            this.props.navigation.goBack();
         }
     };
 
     _column = () => {
-        const {width, height} = Dimensions.get('window');
-        if (width < height) {
-            return 3;
-        } else {
-            const safeArea = getSafeAreaInset();
-            const edge = height * 1.0 / 3;
-            return parseInt((width - safeArea.left - safeArea.right) / edge);
-        }
+        return 3;
     };
 
     _onWindowChanged = () => {
@@ -258,25 +237,5 @@ const styles = StyleSheet.create({
         borderTopColor: '#e6e6ea',
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: '#e6e6ea',
-    },
-    previewButton: {
-        marginLeft: 10,
-        padding: 5,
-        fontSize: 16,
-        color: '#666666',
-    },
-    okButton: {
-        marginRight: 15,
-        paddingHorizontal: 15,
-        height: 30,
-        ...Platform.select({
-            ios: {lineHeight: 30},
-            android: {textAlignVertical: 'center'}
-        }),
-        borderRadius: 6,
-        overflow: 'hidden',
-        fontSize: 16,
-        color: 'white',
-        backgroundColor: '#e15151',
     },
 });

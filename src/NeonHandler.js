@@ -1,61 +1,88 @@
-import {RNCamera} from 'react-native-camera';
+import * as ImagePicker from './index';
 
 export var NeonHandler = (function () {
-    var docData;
+    var neonData;
 
     function createInstance() {
         return {
-            maxSize: 1,
+            colorPrimary: '#DC592B',
+            colorPrimaryDark: '#BA4824',
+            maxSize: 0,
             autoConvertPath: false,
             assetType: 'Photos',
             groupTypes: 'All',
             okLabel: 'OK',
+            yesLabel: 'Yes',
             cancelLabel: 'Cancel',
-            deleteLabel: 'Delete',
-            useVideoLabel: 'Use Video',
-            usePhotoLabel: 'Use Photo',
-            previewLabel: 'Preview',
-            choosePhotoTitle: 'Choose Photo',
+            doneLabel: 'Done',
+            neutralTitle: 'Neon',
+            appName: 'Neon',
+            selectTagForAllImages: 'Please select tag for all images.',
+            tagNotCovered: 'is not covered',
+            backAlertTitle: 'Are you sure want to go back?',
+            backAlertMessage: '',
+            galleryBackAlertTitle: 'Are you sure want to loose all selected images?',
+            galleryBackAlertMessage: '',
+            folderRestrictionErrorMsg: 'Not allowed',
             maxSizeChooseAlert: (number) => 'You can only choose ' + number + ' photos at most',
             maxSizeTakeAlert: (number) => 'You can only take ' + number + ' photos at most',
-            supportedOrientations: ['portrait', 'landscape'],
-            sideType: RNCamera.Constants.Type.back,
-            flashMode: 0,
-            videoQuality: RNCamera.Constants.VideoQuality["480p"],
+            maxSizeForTagTakeAlert: (tag, number) => 'You can only take ' + number + ' photos for ' + tag,
+            initialRoute: undefined,
+            libraryMode: ImagePicker.LIBRARY_MODE.HARD,
+            sideType: ImagePicker.CAMERA_TYPE.REAR,
+            flashMode: ImagePicker.FLASH_MODE.AUTO,
             pictureOptions: {},
-            recordingOptions: {},
+            alreadyAddedImages: undefined,
             selectedImages: [],
             tagList: undefined,
             tagEnabled: false,
-            isVideo: true,
             flashEnabled: true,
             cameraSwitchEnabled: true,
-            resultRoute: undefined,
             callback: undefined,
             showCameraOnNeutral: true,
-            showGalleryOnNeutral: true
+            showGalleryOnNeutral: true,
+            cameraToGallerySwitch: false,
+            galleryToCameraSwitch: false,
+            cameraOrientation: ImagePicker.ORIENTATION.PORTRAIT,
+            folderName: undefined,
+            folderRestriction: true,
+            quality: 80,
+            imageHeight: undefined,
+            imageWidth: undefined,
+            showTagCoachImage: false,
+            showPreviewOnCamera: false,
+            locationEnabled: false,
         };
     }
 
     return {
-        initialize: function (data) {
-            docData = {...createInstance(), ...data};
+        initialize: function (data, alreadyAddedImages) {
+            neonData = {...createInstance(), ...data};
+            if (alreadyAddedImages && alreadyAddedImages instanceof Array) {
+                neonData.selectedImages = alreadyAddedImages;
+            }
         },
         clearInstance: function () {
-            docData = createInstance();
+            neonData = undefined;
         },
         getOptions: function () {
-            if (docData)
-                return docData;
-            return [];
+            if (neonData) {
+                return neonData;
+            }
+            return createInstance();
+        },
+        changeSelectedImages: function (items) {
+            if (neonData) {
+                neonData.selectedImages = [...items];
+            }
         },
         deleteImageBySubCat: function (subCatId, bankId, index, isAll) {
-            if (docData) {
-                docData.forEach((data) => {
+            if (neonData) {
+                neonData.forEach((data) => {
                     data.child.forEach((child) => {
                         if (child.id === subCatId && child.bank_id === bankId) {
                             if (isAll) {
-                                child.images = []
+                                child.images = [];
                             } else {
                                 let newArray = child.images;
                                 newArray.splice(index, 1);
@@ -63,143 +90,11 @@ export var NeonHandler = (function () {
                             }
 
                         }
-                    })
-                })
+                    });
+                });
 
             }
 
-        },
-        deleteImageByServerId: function (catId, subCatId, serverId) {
-            if (docData) {
-
-            }
-        },
-        getImagesToReview: function (subCatId, bankId) {
-            let imageToReview = [];
-            if (docData) {
-                docData.forEach((data) => {
-                    data.child.forEach((child) => {
-                        if (child.id === subCatId && child.bank_id === bankId) {
-                            imageToReview = child.images;
-                        }
-                    })
-                })
-            }
-            return imageToReview;
-        },
-        addMoreImage: function (subCatId, bankId, imageArray, index) {
-            Utility.log('index : ' + index);
-            if (docData) {
-                docData.forEach((data) => {
-                    data.child.forEach((child) => {
-                        if (child.id === subCatId && child.bank_id === bankId) {
-                            if (index === child.images.length) {
-                                imageArray.forEach((item) => {
-                                    child.images.push(item);
-                                })
-                            } else {
-                                let i = index;
-                                for (let j = 0; j < imageArray.length; j++) {
-                                    child.images.splice(i, 0, imageArray[j]);
-                                    i++;
-                                }
-
-
-                            }
-                        }
-                    })
-                })
-            }
-
-        },
-        insertImages: function (subCatId, bankId, imageArray) {
-            if (docData) {
-                docData.forEach((data) => {
-                    data.child.forEach((child) => {
-                        if (child.id === subCatId && child.bank_id === bankId) {
-                            child.images = imageArray;
-                        }
-                    })
-                })
-            }
-        },
-
-        reuploadImages: function (subCatId, bankId, imageArray, index, isAll) {
-            if (docData) {
-                docData.forEach((data) => {
-                    data.child.forEach((child) => {
-                        if (child.id === subCatId && child.bank_id === bankId) {
-                            if (isAll) {
-                                child.images = imageArray;
-                            } else {
-                                let i = index;
-                                if ((child.images.length - 1) === i) {
-                                    for (let j = 0; j < imageArray.length; j++) {
-                                        if (j === 0) {
-                                            child.images.splice(i, 1, imageArray[j]);
-                                        } else {
-                                            child.images.push(imageArray[j])
-                                        }
-                                    }
-                                } else {
-                                    for (let j = 0; j < imageArray.length; j++) {
-                                        if (j === 0) {
-                                            child.images.splice(i, 1, imageArray[j]);
-                                        } else {
-                                            child.images.splice(i, 0, imageArray[j]);
-                                        }
-                                        i++;
-                                    }
-                                }
-                            }
-                        }
-                    })
-                })
-            }
-
-        },
-        updateImageById(imageId, serverImageId, imageUrl) {
-            if (docData) {
-                docData.forEach((data) => {
-                    data.child.forEach((child) => {
-                        child.images.forEach((image) => {
-                            if (image.id === imageId) {
-                                image.id = serverImageId;
-                                image.path = imageUrl;
-                                image.incorrect = 0;
-                                if(image.doc_remarks){
-                                    image.doc_remarks = '';
-                                }
-                            }
-                        })
-                    })
-                })
-            }
-        },
-        getIdsToDelete(subCatId, bankId, index, isAll) {
-            let ids = '';
-            if (docData) {
-                docData.forEach((data) => {
-                    data.child.forEach((child) => {
-                        if (child.id === subCatId && child.bank_id === bankId) {
-                            if (isAll) {
-                                for (let i = 0; i < child.images.length; i++) {
-                                    if (i === (child.images.length - 1)) {
-                                        ids = ids + child.images[i].id
-                                    } else {
-                                        ids = ids + child.images[i].id + ','
-                                    }
-                                }
-                            } else {
-                                ids = ids + child.images[index].id;
-                            }
-
-                        }
-                    })
-                })
-
-            }
-            return ids;
         }
     };
 })();
