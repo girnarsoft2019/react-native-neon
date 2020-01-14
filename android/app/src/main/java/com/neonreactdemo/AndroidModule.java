@@ -2,6 +2,7 @@ package com.neonreactdemo;
 
 import android.widget.Toast;
 
+import android.provider.Settings;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -95,6 +96,16 @@ public class AndroidModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void exitApp() {
         getCurrentActivity().finish();
+    }
+
+    @ReactMethod
+    public void locationSettings() {
+        Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+        if (intent.resolveActivity(mReactContext.getPackageManager()) != null) {
+            mReactContext.startActivity(intent);
+        }
     }
 
 

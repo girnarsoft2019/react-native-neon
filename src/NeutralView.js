@@ -28,7 +28,7 @@ export default class NeutralView extends Component {
         self = this;
         edge = (Dimensions.get('window').width) / 3 - 5;
         this.state = {
-            data: [...NeonHandler.getOptions().selectedImages],
+            data: [...NeonHandler.getOptions().selectedImages]
         };
     }
 

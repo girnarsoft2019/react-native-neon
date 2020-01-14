@@ -1,7 +1,8 @@
 import React, {Component} from 'react';
-import {Platform, Alert} from 'react-native';
+import {Platform, Alert, Linking} from 'react-native';
 import {NeonHandler} from './NeonHandler';
 import * as ImagePicker from './index';
+import AndroidModule from './AndroidModule';
 
 export function checkForMandatoryImagesTaken() {
     if (NeonHandler.getOptions().tagEnabled) {
@@ -113,8 +114,16 @@ export function formatString() {
 export function getUriFromLocalFilePath(path) {
     if (path.startsWith('file://')) {
         return path;
-    }else {
-        return 'file://'+path;
+    } else {
+        return 'file://' + path;
     }
 
+}
+
+export function openLocationSetting() {
+    try {
+        (Platform.OS === 'ios') ? Linking.openURL('App-prefs:') : AndroidModule.locationSettings();
+    } catch (err) {
+        console.error(err);
+    }
 }

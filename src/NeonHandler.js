@@ -24,6 +24,11 @@ export var NeonHandler = (function () {
             galleryBackAlertTitle: 'Are you sure want to loose all selected images?',
             galleryBackAlertMessage: '',
             folderRestrictionErrorMsg: 'Not allowed',
+            savingImage: 'Saving Image...',
+            fetchingLocationMsg: 'Fetching location, please wait.',
+            enableLocationTitle: 'Enable Device Location',
+            enableLocationMsg: 'Turn on Device location and select High Accuracy mode to proceed',
+            openSettings:'Open Settings',
             maxSizeChooseAlert: (number) => 'You can only choose ' + number + ' photos at most',
             maxSizeTakeAlert: (number) => 'You can only take ' + number + ' photos at most',
             maxSizeForTagTakeAlert: (tag, number) => 'You can only take ' + number + ' photos for ' + tag,
@@ -51,7 +56,7 @@ export var NeonHandler = (function () {
             imageWidth: undefined,
             showTagCoachImage: false,
             showPreviewOnCamera: false,
-            locationEnabled: false,
+            locationRestrictive: false
         };
     }
 
@@ -76,6 +81,13 @@ export var NeonHandler = (function () {
                 neonData.selectedImages = [...items];
             }
         },
+        deleteLastImage: function (items) {
+            if (neonData) {
+                console.log(neonData.selectedImages.length);
+                neonData.selectedImages = neonData.selectedImages.slice(0,neonData.selectedImages.length - 1);
+                console.log(neonData.selectedImages.length);
+            }
+        },
         deleteImageBySubCat: function (subCatId, bankId, index, isAll) {
             if (neonData) {
                 neonData.forEach((data) => {
@@ -95,6 +107,6 @@ export var NeonHandler = (function () {
 
             }
 
-        }
+        },
     };
 })();

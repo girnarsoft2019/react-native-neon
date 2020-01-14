@@ -27,7 +27,13 @@ export default class AndroidModule {
         if (!checkIfInitialized()) {
             return;
         }
-        AndroidNativeModule.exitApp()
+        AndroidNativeModule.exitApp();
     }
 
+    static locationSettings() {
+        if (!checkIfInitialized()) {
+            return;
+        }
+        AndroidNativeModule.locationSettings();
+    }
 }

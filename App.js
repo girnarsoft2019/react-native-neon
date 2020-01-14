@@ -10,7 +10,7 @@ import React, {Component} from 'react';
 import {
     View,
     Text,
-    TouchableOpacity, PermissionsAndroid, ScrollView
+    TouchableOpacity, ScrollView
 } from 'react-native';
 import * as ImagePicker from './src';
 
@@ -24,26 +24,28 @@ class App extends Component {
     }
     componentDidMount() {
         console.log('componentDidMount');
-        this.askForPermission();
-    }
-
-    async askForPermission() {
-        try {
-            const granted = await PermissionsAndroid.requestMultiple([PermissionsAndroid.PERMISSIONS.CAMERA, PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE]);
-            if (granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED && granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE] === PermissionsAndroid.RESULTS.GRANTED) {
-
-            } else {
-
-            }
-        } catch (err) {
-            console.warn(err);
-        }
     }
 
     onImageCollection = (data) => {
         console.log('Data------------->',data);
         this.setState({data: data.data, response: JSON.stringify(data)});
         this.state.data = data.data
+    };
+
+    openCameraFront = () => {
+        ImagePicker.openCamera({
+            callback: this.onImageCollection,
+            navigation: this.props.navigation,
+            resultRoute: 'app',
+            alreadyAddedImages: this.state.data,
+            tagEnabled: false,
+            cameraOrientation: ImagePicker.ORIENTATION.PORTRAIT,
+            sideType: ImagePicker.CAMERA_TYPE.FRONT,
+            cameraSwitchEnabled: false,
+            flashEnabled: false,
+            folderName: 'ABC123',
+            showPreviewOnCamera: false
+        });
     };
 
     openCamera = () => {
@@ -55,6 +57,7 @@ class App extends Component {
             tagEnabled: false,
             folderName: 'ABC123',
             showPreviewOnCamera: false,
+            locationRestrictive: true,
             tagList: [{tagName: 'abc', mandatory: true, tagId:1, numberOfPhotos: 1},{tagName: 'abcd', tagId:2, numberOfPhotos: 1},{tagName: 'abcde',mandatory: true, tagId:3, numberOfPhotos: 1},{tagName: 'abcdef', tagId: 4, numberOfPhotos: 1}]
         });
     };
@@ -119,6 +122,11 @@ class App extends Component {
                     style={{marginTop: 15, justifyContent: 'center', alignItems: 'center', backgroundColor: 'green'}}
                     onPress={() => this.openGallery()}>
                     <Text style={{padding: 12, color: 'white'}}>Gallery</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={{marginTop: 15, justifyContent: 'center', alignItems: 'center', backgroundColor: 'green'}}
+                    onPress={() => this.openCameraFront()}>
+                    <Text style={{padding: 12, color: 'white'}}>Camera Front</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={{marginTop: 15, justifyContent: 'center', alignItems: 'center', backgroundColor: 'green'}}

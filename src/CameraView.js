@@ -12,6 +12,7 @@ import {
     ActivityIndicator,
     BackHandler,
     Modal,
+    AppState,
 } from 'react-native';
 import {RNCamera} from 'react-native-camera';
 import {NeonHandler} from './NeonHandler';
@@ -25,7 +26,7 @@ import * as RNFS from 'react-native-fs';
 import AndroidModule from './AndroidModule';
 import * as Utility from './Utility';
 import ImageResizer from 'react-native-image-resizer';
-
+import Geolocation, {PositionError} from 'react-native-geolocation-service';
 
 let self;
 export default class CameraView extends Component {
@@ -43,15 +44,32 @@ export default class CameraView extends Component {
             sideType: NeonHandler.getOptions().sideType === ImagePicker.CAMERA_TYPE.REAR ? RNCamera.Constants.Type.back : RNCamera.Constants.Type.front,
             flashMode: this.flashModes[NeonHandler.getOptions().flashMode],
             isRecording: false,
+            appState: AppState.currentState,
             currentTagIndex: 0,
             isLoading: false,
             showPreview: false,
             currentTempFilInfo: undefined,
             moveToNextTag: false,
+            settingsActive: false
         };
     }
 
+    _handleAppStateChange = (nextAppState) => {
+        if (this.state.appState.match(/active/)) {
+            console.log('App is in background');
+        }
+        if (this.state.appState.match(/inactive|background/) && nextAppState === 'active') {
+            if(this.state.settingsActive){
+                this.checkForLocationRestriction();
+                this.state.settingsActive = false;
+            }
+            console.log('App has come to the foreground!');
+        }
+        this.state.appState = nextAppState;
+    };
+
     componentDidMount() {
+        AppState.addEventListener('change', this._handleAppStateChange);
         BackHandler.addEventListener('hardwareBackPress', this.handleBackButtonClick);
         if (NeonHandler.getOptions().cameraOrientation === ImagePicker.ORIENTATION.LANDSCAPE) {
             Orientation.lockToLandscape();
@@ -62,14 +80,110 @@ export default class CameraView extends Component {
         RNFS.mkdir(destPath.toString()).then(() => {
 
         });
-
-        //String.prototype.format();
-        //Dimensions.addEventListener('change', this._onWindowChanged);
+        this.changeActiveIndexOfTag();
+        this.checkForLocationRestriction();
     }
 
+    checkForLocationRestriction = () => {
+        if (NeonHandler.getOptions().locationRestrictive) {
+            this.getLocation();
+        }
+    };
+
+    getLocation = async () => {
+        Geolocation.getCurrentPosition(
+            (position) => {
+                if (position || position.coords || position.coords.latitude || position.coords.longitude) {
+                    self.location = position;
+                }
+                console.log(position);
+                self.getLocationUpdates();
+            },
+            (error) => {
+                self.handleLocationError(error);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 10000,
+                distanceFilter: 50,
+                forceRequestLocation: true,
+            },
+        );
+    };
+
+    handleLocationError = (error) => {
+        if (error.code) {
+            switch (error.code) {
+                case PositionError.POSITION_UNAVAILABLE:
+                    self.openLocationSettingDialog();
+                    break;
+                case PositionError.SETTINGS_NOT_SATISFIED:
+                    self.openLocationSettingDialog();
+                    break;
+                default:
+
+            }
+        }
+        console.log(error);
+    };
+
+    openLocationSettingDialog() {
+        Alert.alert(NeonHandler.getOptions().enableLocationTitle, NeonHandler.getOptions().enableLocationMsg, [
+            {
+                text: NeonHandler.getOptions().openSettings,
+                onPress: () => self.openLocationSetting(),
+            },
+        ], {cancelable: true});
+
+    }
+
+    openLocationSetting = () => {
+        this.state.settingsActive = true;
+        Utility.openLocationSetting();
+    };
+
+    getLocationUpdates = async () => {
+        this.watchId = Geolocation.watchPosition(
+            (position) => {
+                if (position || position.coords || position.coords.latitude || position.coords.longitude) {
+                    self.location = position;
+                }
+                console.log(position);
+            },
+            (error) => {
+                console.log(error);
+            },
+            {enableHighAccuracy: true, distanceFilter: 0, interval: 5000, fastestInterval: 2000},
+        );
+    };
+
+    removeLocationUpdates = () => {
+        if (this.watchId !== null) {
+            Geolocation.clearWatch(this.watchId);
+        }
+    };
+
+    changeActiveIndexOfTag = () => {
+        if (NeonHandler.getOptions().selectedImages && NeonHandler.getOptions().selectedImages.length > 0 && NeonHandler.getOptions().tagEnabled && NeonHandler.getOptions().tagList && NeonHandler.getOptions().tagList.length > 0) {
+            let tagList = NeonHandler.getOptions().tagList;
+            let images = NeonHandler.getOptions().selectedImages;
+            for (let i = 0; i < tagList.length; i++) {
+                if (tagList[i].mandatory) {
+                    if (!images.some(item => item.fileTag && item.fileTag.tagId && item.fileTag.tagId == tagList[i].tagId)) {
+                        self.setState({currentTagIndex: i});
+                        break;
+                    }
+                }
+            }
+        }
+    };
+
     componentWillUnmount() {
+        AppState.removeEventListener('change', this._handleAppStateChange);
         BackHandler.removeEventListener('hardwareBackPress', this.handleBackButtonClick);
         Orientation.lockToPortrait();
+        this.removeLocationUpdates();
         //Dimensions.removeEventListener('change', this._onWindowChanged);
     }
 
@@ -93,6 +207,13 @@ export default class CameraView extends Component {
     };
 
     _clickTakePicture = async () => {
+        if (NeonHandler.getOptions().locationRestrictive) {
+            if (!self.location || !self.location.coords || !self.location.coords.latitude || !self.location.coords.longitude) {
+                Toast.show(NeonHandler.getOptions().fetchingLocationMsg, Toast.SHORT);
+                self.getLocation();
+                return;
+            }
+        }
         this.setState({isLoading: true});
         let tagEnabled = false;
         let currentTag = undefined;
@@ -153,11 +274,20 @@ export default class CameraView extends Component {
             if (tagEnabled) {
                 fileInfo.fileTag = currentTag;
             }
+            fileInfo.timestamp = new Date().getTime();
             fileInfo.filePath = Utility.getUriFromLocalFilePath(fileInfo.filePath);
             fileInfo.source = ImagePicker.IMAGE_SOURCE.CAMERA;
-            this.state.currentTempFilInfo = fileInfo;
-            this.state.moveToNextTag = tagEnabled && tagCountRestriction && (taggedImagesCount + 1) >= currentTag.numberOfPhotos && moveToNext;
-            this.checkForPreview();
+            fileInfo.fileName = fileInfo.filePath.substring(fileInfo.filePath.lastIndexOf('/') + 1);
+            if (NeonHandler.getOptions().locationRestrictive) {
+                fileInfo.latitude = self.location.coords.latitude;
+                fileInfo.longitude = self.location.coords.longitude;
+            }
+            let data = [...NeonHandler.getOptions().selectedImages, fileInfo];
+            NeonHandler.changeSelectedImages(data);
+            this.setState({isLoading: false, currentTempFilInfo: fileInfo});
+            //this.state.currentTempFilInfo = fileInfo;
+            //this.state.moveToNextTag = tagEnabled && tagCountRestriction && (taggedImagesCount + 1) >= currentTag.numberOfPhotos && moveToNext;
+            //this.checkForPreview();
             /*if (tagEnabled && tagCountRestriction && (taggedImagesCount + 1) >= currentTag.numberOfPhotos) {
                 this.onNextPress(moveToNext);
             } else {
@@ -266,31 +396,32 @@ export default class CameraView extends Component {
         if (next) {
             this.setState({
                 currentTagIndex: this.state.currentTagIndex + 1,
-                isLoading: false,
-                showPreview: false,
-                moveToNextTag: false,
+                currentTempFilInfo: undefined,
             });
         } else {
             this._clickDone(false);
         }
-
     };
 
     onPreviousPress = () => {
         this.setState({
             currentTagIndex: this.state.currentTagIndex - 1,
+            currentTempFilInfo: undefined,
         });
     };
 
     onCancelPress = () => {
+        NeonHandler.deleteLastImage();
         this.setState({
             showPreview: false,
-            isLoading: false,
+            currentTempFilInfo: undefined,
         });
     };
 
     onOkPress = () => {
-        this.addImage();
+        this.setState({
+            showPreview: false,
+        });
     };
 
     render() {
@@ -316,7 +447,7 @@ export default class CameraView extends Component {
                     <View style={{padding: 20, backgroundColor: Colors.WHITE, alignItems: 'center', borderRadius: 5}}>
                         <ActivityIndicator size="large" color={NeonHandler.getOptions().colorPrimary}
                                            visible={this.state.isLoading}/>
-                        <Text>Saving Image...</Text>
+                        <Text>{NeonHandler.getOptions().savingImage}</Text>
                     </View>
                 </View>}
                 <Modal
@@ -348,7 +479,7 @@ export default class CameraView extends Component {
         }
         return (
             <View
-                style={NeonHandler.getOptions().cameraOrientation === ImagePicker.ORIENTATION.LANDSCAPE ? styles.flashContainerRight : styles.flashContainerLeft}>
+                style={NeonHandler.getOptions().cameraOrientation === ImagePicker.ORIENTATION.LANDSCAPE ? styles.flashContainerRight : styles.flashContainerRight}>
                 {NeonHandler.getOptions().flashEnabled && this._renderTopButton(image, this._clickFlashMode)}
                 {NeonHandler.getOptions().cameraSwitchEnabled && this._renderTopButton(require('./images/switch_camera.png'), this._clickSwitchSide)}
             </View>
@@ -356,27 +487,54 @@ export default class CameraView extends Component {
     };
 
     _renderTagCoachImage = () => {
+        let isLandscape = NeonHandler.getOptions().cameraOrientation === ImagePicker.ORIENTATION.LANDSCAPE;
+        let height = isLandscape ? 75 : 100;
+        let width = isLandscape ? 100 : 75;
+        let tag = undefined;
         if (NeonHandler.getOptions().tagEnabled && NeonHandler.getOptions().tagList && NeonHandler.getOptions().tagList.length > 0 && NeonHandler.getOptions().showTagCoachImage) {
-            let tag = NeonHandler.getOptions().tagList[this.state.currentTagIndex];
-            let isLandscape = NeonHandler.getOptions().cameraOrientation === ImagePicker.ORIENTATION.LANDSCAPE;
-            if (tag.tagPreviewUrl && tag.tagPreviewUrl != '') {
-                return (
-                    <View style={{
-                        position: 'absolute',
-                        left: 10,
-                        top: 65,
-                        height: isLandscape ? 75 : 100,
-                        width: isLandscape ? 100 : 75,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        elevation: 3,
-                    }}>
-                        <Image resizeMode={'contain'}
-                               style={{height: isLandscape ? 75 : 100, width: isLandscape ? 100 : 75}}
-                               source={{uri: tag.tagPreviewUrl}}/>
-                    </View>
-                );
+            if (NeonHandler.getOptions().tagList[this.state.currentTagIndex].tagPreviewUrl && NeonHandler.getOptions().tagList[this.state.currentTagIndex].tagPreviewUrl != '') {
+                tag = NeonHandler.getOptions().tagList[this.state.currentTagIndex];
+            } else {
+                tag = undefined;
             }
+        }
+        return (
+            <View style={{
+                position: 'absolute',
+                left: 10,
+                top: 65,
+                width: width,
+                elevation: 3,
+            }}>
+                {tag && <View style={{
+                    height: height,
+                    width: width,
+                }}>
+                    <Image resizeMode={'contain'}
+                           style={{height: isLandscape ? 75 : 100, width: isLandscape ? 100 : 75}}
+                           source={{uri: tag.tagPreviewUrl}}/>
+                </View>}
+                {this._renderPreviewThumbnail(height, width)}
+            </View>
+        );
+    };
+
+    _renderPreviewThumbnail = (height, width) => {
+        if (NeonHandler.getOptions().showPreviewOnCamera && this.state.currentTempFilInfo) {
+            return (
+                <TouchableOpacity onPress={() => {
+                    self.setState({
+                        showPreview: true,
+                    });
+                }} style={{
+                    height: height,
+                    width: width,
+                }}>
+                    <Image resizeMode={'contain'}
+                           style={{height: height, width: width}}
+                           source={{uri: this.state.currentTempFilInfo.filePath}}/>
+                </TouchableOpacity>
+            );
         }
     };
 
@@ -444,7 +602,7 @@ export default class CameraView extends Component {
                 type={this.state.sideType}
                 flashMode={this.state.flashMode}
                 style={styles.camera}
-                captureAudio={true}
+                captureAudio={false}
                 fixOrientation={true}
             />
         );

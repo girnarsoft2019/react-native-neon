@@ -3,7 +3,7 @@ export const FileInfo = {
     fileName: '',
     source: '',
     fileTag: undefined,
-    latitude: 123,
-    longitude: 123,
-    timestamp: 783878,
+    latitude: 0,
+    longitude: 0,
+    timestamp: 0,
 };

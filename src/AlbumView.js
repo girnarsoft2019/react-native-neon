@@ -164,6 +164,8 @@ export default class extends React.PureComponent {
                 let fileInfo = {...FileInfo};
                 fileInfo.filePath = itemuri.uri;
                 fileInfo.source = ImagePicker.IMAGE_SOURCE.GALLERY;
+                fileInfo.timestamp = new Date().getTime();
+                fileInfo.fileName = fileInfo.filePath.substring(fileInfo.filePath.lastIndexOf('/') + 1);
                 this.setState({
                     selectedItems: [...this.state.selectedItems, fileInfo],
                     changedImages: [...this.state.changedImages, fileInfo],
