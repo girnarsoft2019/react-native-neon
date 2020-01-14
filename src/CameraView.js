@@ -50,7 +50,7 @@ export default class CameraView extends Component {
             showPreview: false,
             currentTempFilInfo: undefined,
             moveToNextTag: false,
-            settingsActive: false
+            settingsActive: false,
         };
     }
 
@@ -59,7 +59,7 @@ export default class CameraView extends Component {
             console.log('App is in background');
         }
         if (this.state.appState.match(/inactive|background/) && nextAppState === 'active') {
-            if(this.state.settingsActive){
+            if (this.state.settingsActive) {
                 this.checkForLocationRestriction();
                 this.state.settingsActive = false;
             }

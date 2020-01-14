@@ -16,7 +16,7 @@ import ActionBarWrapper from './ActionBarWrapper';
 import {FileInfo} from './FileInfo';
 import Toast from 'react-native-simple-toast';
 import * as ImagePicker from './index';
-import Exif from 'react-native-exif'
+import Exif from 'react-native-exif';
 
 let self;
 export default class extends React.PureComponent {
@@ -157,10 +157,10 @@ export default class extends React.PureComponent {
                     console.log(JSON.stringify(data));
                     allowed = data.exif && data.exif.Make && data.exif.Make == NeonHandler.getOptions().appName;
                 }).catch(error => {
-                    allowed = false
-                })
+                    allowed = false;
+                });
             }
-            if(allowed){
+            if (allowed) {
                 let fileInfo = {...FileInfo};
                 fileInfo.filePath = itemuri.uri;
                 fileInfo.source = ImagePicker.IMAGE_SOURCE.GALLERY;
@@ -170,7 +170,7 @@ export default class extends React.PureComponent {
                     selectedItems: [...this.state.selectedItems, fileInfo],
                     changedImages: [...this.state.changedImages, fileInfo],
                 });
-            }else {
+            } else {
                 Toast.show(NeonHandler.getOptions().folderRestrictionErrorMsg, Toast.SHORT);
             }
 
