@@ -18,6 +18,7 @@ import * as Strings from './values/Strings';
 import ViewPager from './viewPager/ViewPager';
 import * as Colors from './values/Colors';
 import {FileInfo} from './FileInfo';
+import index from 'react-native-simple-toast';
 
 let dataSource = new ViewPager.DataSource({
     pageHasChanged: (p1, p2) => p1 !== p2,
@@ -33,7 +34,7 @@ export default class extends React.PureComponent {
             selectedIndex: props.navigation.state.params.selectedIndex,
             itemData: props.navigation.state.params.itemData,
             changeType: 0,
-            tagList: NeonHandler.getOptions().tagList && NeonHandler.getOptions().tagList.length > 0 ? JSON.parse(JSON.stringify([...NeonHandler.getOptions().tagList])): [],
+            tagList: NeonHandler.getOptions().tagList && NeonHandler.getOptions().tagList.length > 0 ? JSON.parse(JSON.stringify([...NeonHandler.getOptions().tagList])) : [],
             modalVisible: false,
         };
     }
@@ -43,7 +44,7 @@ export default class extends React.PureComponent {
         this.prepareTagList();
     }
 
-    componentWillUnmount(){
+    componentWillUnmount() {
         BackHandler.removeEventListener('hardwareBackPress', this.handleBackButtonClick);
     }
 
@@ -127,16 +128,58 @@ export default class extends React.PureComponent {
         this.state.tagList = tagList;
     };
 
+    _onDelete = () => {
+        if (this.state.data.length === 1) {
+            this.showDeleteAlert();
+        } else {
+            let selectedIndex = 0;
+            if (this.state.selectedIndex === (this.state.data.length - 1)) {
+                selectedIndex = this.state.selectedIndex - 1;
+            } else {
+                selectedIndex = this.state.selectedIndex;
+            }
+            console.log('before',this.state.data);
+            let data = this.state.data.filter((value, index) => index !== this.state.selectedIndex);
+            console.log('after',data);
+            this.setState({
+                selectedIndex: selectedIndex,
+                data: data
+            })
+        }
+    };
+
+    showDeleteAlert = () => {
+        Alert.alert(NeonHandler.getOptions().deleteImageTitle, '', [
+            {
+                text: NeonHandler.getOptions().yesLabel,
+                onPress: () => {
+                    self.state.data = [];
+                    self._clickOk();
+                },
+            }, {
+                text: NeonHandler.getOptions().cancelLabel,
+                onPress: () => {
+                },
+            },
+        ], {cancelable: false});
+    };
+
     render() {
         extraData = !extraData;
         let data = dataSource.cloneWithPages(this.state.data);
         let selectedFile = this.state.data[this.state.selectedIndex];
         let actionBarProps = {
             values: {title: Strings.IMAGE_REVIEW},
-            rightIcons: [{
-                image: require('./images/check_box.png'),
-                onPress: this._clickOk,
-            }],
+            rightIcons: [
+                {
+                    image: require('./images/bin.png'),
+                    onPress: this._onDelete,
+                },
+                {
+                    image: require('./images/check_box.png'),
+                    onPress: this._clickOk,
+                },
+            ],
             styleAttr: {
                 leftIconImage: require('./images/back.png'),
             }

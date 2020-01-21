@@ -22,6 +22,7 @@ export var NeonHandler = (function () {
             backAlertTitle: 'Are you sure want to go back?',
             backAlertMessage: '',
             galleryBackAlertTitle: 'Are you sure want to loose all selected images?',
+            deleteImageTitle: 'Are you sure want to delete the image?',
             galleryBackAlertMessage: '',
             folderRestrictionErrorMsg: 'Not allowed',
             savingImage: 'Saving Image...',
