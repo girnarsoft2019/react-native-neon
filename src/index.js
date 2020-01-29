@@ -8,6 +8,7 @@ import NeutralView from './NeutralView';
 import ImageReviewView from './ImageReviewView';
 import Toast from 'react-native-simple-toast';
 import {NeonHandler} from './NeonHandler';
+import * as Utility from "./Utility";
 
 export const LIBRARY_MODE = {
     SOFT: 0,
@@ -43,23 +44,46 @@ export const FLASH_MODE = {
 };
 
 export const neonNavigator = {
+    [PageKeys.neutral]: {screen: NeutralView, navigationOptions: {header: null}},
     [PageKeys.camera]: {screen: CameraView, navigationOptions: {header: null}},
     [PageKeys.album_list]: {screen: AlbumListView, navigationOptions: {header: null}},
     [PageKeys.album_view]: {screen: AlbumView, navigationOptions: {header: null}},
-    [PageKeys.neutral]: {screen: NeutralView, navigationOptions: {header: null}},
     [PageKeys.image_review]: {screen: ImageReviewView, navigationOptions: {header: null}},
 };
 
-export const openCamera = (options) => showImagePicker({...options, initialRoute: PageKeys.camera});
-export const openGallery = (options) => showImagePicker({...options, initialRoute: PageKeys.album_list});
-export const openNeutral = (options) => showImagePicker({...options, initialRoute: PageKeys.neutral});
+export const openCamera = (navigation, options, callback) => showImagePicker(navigation, {
+    ...options,
+    initialRoute: PageKeys.camera
+}, callback);
+export const openGallery = (navigation, options, callback) => showImagePicker(navigation, {
+    ...options,
+    initialRoute: PageKeys.album_list
+}, callback);
+export const openNeutral = (navigation, options, callback) => showImagePicker(navigation, {
+    ...options,
+    initialRoute: PageKeys.neutral
+}, callback);
 
-async function showImagePicker(options) {
+async function showImagePicker(navigation, options, callback) {
+    if (!options) {
+        options = {};
+    }
+    if (!navigation) {
+        console.warn('navigation is required');
+        return;
+    }
+
+    options['navigation'] = navigation;
+    if (!callback) {
+        console.warn('callback is required');
+        return;
+    }
+    options['callback'] = callback;
     let status = await hasPermissions(options);
     if (status === 1) {
         NeonHandler.clearInstance();
         NeonHandler.initialize(options, options.alreadyAddedImages);
-        console.log(JSON.stringify(NeonHandler.getOptions()));
+        Utility.log(JSON.stringify(NeonHandler.getOptions()));
         if (options.navigation && options.initialRoute && options.callback) {
             options.navigation.navigate(options.initialRoute);
         }
@@ -103,7 +127,7 @@ async function hasPermissions(options) {
 
     if (locationPermissionRequired) {
         const granted = await PermissionsAndroid.requestMultiple([PermissionsAndroid.PERMISSIONS.CAMERA, PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE, PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION]);
-        console.log(granted[PermissionsAndroid.PERMISSIONS.CAMERA], granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE], granted[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION]);
+        Utility.log(granted[PermissionsAndroid.PERMISSIONS.CAMERA], granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE], granted[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION]);
         if (granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED && granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE] === PermissionsAndroid.RESULTS.GRANTED && granted[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] === PermissionsAndroid.RESULTS.GRANTED) {
             return 1;
         } else if (granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN || granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN || granted[PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
@@ -115,7 +139,7 @@ async function hasPermissions(options) {
         }
     } else {
         const granted = await PermissionsAndroid.requestMultiple([PermissionsAndroid.PERMISSIONS.CAMERA, PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE]);
-        console.log(granted[PermissionsAndroid.PERMISSIONS.CAMERA], granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE]);
+        Utility.log(granted[PermissionsAndroid.PERMISSIONS.CAMERA], granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE]);
         if (granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.GRANTED && granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE] === PermissionsAndroid.RESULTS.GRANTED) {
             return 1;
         } else if (granted[PermissionsAndroid.PERMISSIONS.CAMERA] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN || granted[PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE] === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {

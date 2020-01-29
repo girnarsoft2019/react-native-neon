@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-    CameraRoll,
     Image,
     FlatList,
     Platform,
@@ -12,6 +11,7 @@ import {
     SafeAreaView,
     BackHandler,
 } from 'react-native';
+import CameraRoll from "@react-native-community/cameraroll";
 import PageKeys from './PageKeys';
 import {NeonHandler} from "./NeonHandler";
 import * as Strings from './values/Strings';
@@ -182,7 +182,7 @@ export default class extends React.PureComponent {
     };
 
     _onDoneFromAlbum = (items) => {
-        console.log(JSON.stringify(items));
+        Utility.log(JSON.stringify(items));
         this.setState({selectedItems: [...items]});
     };
 

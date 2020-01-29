@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Component} from 'react';
 import {
     Alert,
     Dimensions,
@@ -15,17 +15,13 @@ import {
 import {NeonHandler} from './NeonHandler';
 import ActionBarWrapper from './ActionBarWrapper';
 import * as Strings from './values/Strings';
-import ViewPager from './viewPager/ViewPager';
+import ViewPager from '@react-native-community/viewpager';
 import * as Colors from './values/Colors';
-import {FileInfo} from './FileInfo';
-import index from 'react-native-simple-toast';
+import * as Utility from "./Utility";
 
-let dataSource = new ViewPager.DataSource({
-    pageHasChanged: (p1, p2) => p1 !== p2,
-});
 let self;
 let extraData = false;
-export default class extends React.PureComponent {
+export default class ImageReviewView extends Component {
     constructor(props) {
         super(props);
         self = this;
@@ -37,6 +33,7 @@ export default class extends React.PureComponent {
             tagList: NeonHandler.getOptions().tagList && NeonHandler.getOptions().tagList.length > 0 ? JSON.parse(JSON.stringify([...NeonHandler.getOptions().tagList])) : [],
             modalVisible: false,
         };
+        this.viewPager = React.createRef();
     }
 
     componentDidMount() {
@@ -66,22 +63,14 @@ export default class extends React.PureComponent {
         }
     };
 
-    changeSelectedIndex = (pageNo) => {
-        this.setState({selectedIndex: pageNo, changeType: 0});
-    };
-
     onLeftPress = () => {
-        this.setState({
-            selectedIndex: this.state.selectedIndex - 1,
-            changeType: 1,
-        });
+        let prevIndex = this.state.selectedIndex - 1;
+        this.viewPager.current.setPage(prevIndex);
     };
 
     onRightPress = () => {
-        this.setState({
-            selectedIndex: this.state.selectedIndex + 1,
-            changeType: 1,
-        });
+        let nextIndex = this.state.selectedIndex + 1;
+        this.viewPager.current.setPage(nextIndex);
     };
 
     onTagPress = () => {
@@ -98,7 +87,7 @@ export default class extends React.PureComponent {
             imageUrl = 'file://' + item.path;
         }
         return (
-            <View style={{flex: 1}}>
+            <View key={index.toString()} style={{flex: 1}}>
                 <Image style={{flex: 1, resizeMode: 'contain'}}
                        source={{uri: imageUrl}}/>
             </View>
@@ -138,9 +127,9 @@ export default class extends React.PureComponent {
             } else {
                 selectedIndex = this.state.selectedIndex;
             }
-            console.log('before',this.state.data);
+            Utility.log('before', this.state.data);
             let data = this.state.data.filter((value, index) => index !== this.state.selectedIndex);
-            console.log('after',data);
+            Utility.log('after', data);
             this.setState({
                 selectedIndex: selectedIndex,
                 data: data
@@ -163,10 +152,13 @@ export default class extends React.PureComponent {
             },
         ], {cancelable: false});
     };
+    onPageSelected = (e) => {
+        Utility.log(e.nativeEvent.position);
+        this.setState({selectedIndex: e.nativeEvent.position});
+    };
 
     render() {
         extraData = !extraData;
-        let data = dataSource.cloneWithPages(this.state.data);
         let selectedFile = this.state.data[this.state.selectedIndex];
         let actionBarProps = {
             values: {title: Strings.IMAGE_REVIEW},
@@ -198,16 +190,13 @@ export default class extends React.PureComponent {
                         styleAttributes={actionBarProps.styleAttr}/>
                     <View style={{flex: 1, backgroundColor: Colors.BLACK, paddingVertical: 10}}>
                         <ViewPager
-                            ref={'viewPager'}
+                            style={{flex: 1}}
+                            pageMargin={20}
                             initialPage={this.state.selectedIndex}
-                            dataSource={data}
-                            changeType={this.state.changeType}
-                            renderPage={this.renderPage}
-                            isLoop={false}
-                            autoPlay={false}
-                            renderPageIndicator={false}
-                            onChangePage={this.changeSelectedIndex}
-                        />
+                            onPageSelected={this.onPageSelected}
+                            ref={this.viewPager}>
+                            {this.state.data.map((item, index) => this.renderPage(item, index))}
+                        </ViewPager>
                         {(this.state.selectedIndex !== 0) && <TouchableOpacity onPress={this.onLeftPress} style={{
                             position: 'absolute',
                             top: (Dimensions.get('window').height - 150) / 2,

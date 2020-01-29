@@ -1,5 +1,9 @@
+/*import MyModule from '../utils/MyModule';
+
+export default MyModule;*/
+
 'use strict';
-import {NativeModules} from 'react-native';
+import {Linking, NativeModules, Platform} from 'react-native';
 
 const AndroidNativeModule = NativeModules.AndroidModule;
 
@@ -30,10 +34,38 @@ export default class AndroidModule {
         AndroidNativeModule.exitApp();
     }
 
-    static locationSettings() {
-        if (!checkIfInitialized()) {
-            return;
+    /*static generalSettings() {
+        if (!checkIfInitialized()) return;
+        try {
+            (Platform.OS === 'ios') ? Linking.openURL('App-prefs:') : AndroidNativeModule.generalSettings();
+        } catch (err) {
+            console.error(err);
         }
-        AndroidNativeModule.locationSettings();
+    }
+
+    static appSettings() {
+        if (!checkIfInitialized()) return;
+        try {
+            (Platform.OS === 'ios') ?
+                Linking.openURL('app-settings:') :
+                AndroidNativeModule.appSettings();
+        } catch (err) {
+            console.error(err);
+        }
+    }*/
+
+    static locationSettings() {
+        try {
+            if (Platform.OS === 'ios') {
+                Linking.openURL('App-prefs:');
+            } else {
+                if (!checkIfInitialized()) {
+                    return;
+                }
+                AndroidNativeModule.locationSettings();
+            }
+        } catch (err) {
+            console.error(err);
+        }
     }
 }

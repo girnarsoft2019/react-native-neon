@@ -86,21 +86,21 @@ export default class ActionBarWrapper extends Component {
                 if (this.props.actions && typeof this.props.actions.onLeftPress === 'function') {
                     this.props.actions.onLeftPress();
                 } else {
-                    console.log('CB not handled !');
+                    console.warn('CB not handled !');
                 }
             },
             onTitlePress: () => {
                 if (this.props.actions && typeof this.props.actions.onTitlePress === 'function') {
                     this.props.actions.onTitlePress();
                 } else {
-                    console.log('CB not handled !');
+                    console.warn('CB not handled !');
                 }
             },
             onRightTextPress: () => {
                 if (this.props.actions && typeof this.props.actions.onRightTextPress === 'function') {
                     this.props.actions.onRightTextPress();
                 } else {
-                    console.log('CB not handled !');
+                    console.warn('CB not handled !');
                 }
             },
         };

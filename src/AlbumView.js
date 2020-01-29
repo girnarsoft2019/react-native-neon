@@ -17,6 +17,7 @@ import {FileInfo} from './FileInfo';
 import Toast from 'react-native-simple-toast';
 import * as ImagePicker from './index';
 import Exif from 'react-native-exif';
+import * as Utility from "./Utility";
 
 let self;
 export default class extends React.PureComponent {
@@ -154,9 +155,10 @@ export default class extends React.PureComponent {
             let allowed = true;
             if (NeonHandler.getOptions().folderRestriction) {
                 await Exif.getExif(itemuri.uri).then(data => {
-                    console.log(JSON.stringify(data));
-                    allowed = data.exif && data.exif.Make && data.exif.Make == NeonHandler.getOptions().appName;
+                    Utility.log(JSON.stringify(data));
+                    allowed = data.exif && data.exif.Make && data.exif.Make == NeonHandler.getOptions().appName.replace(/ /g, '');
                 }).catch(error => {
+                    console.warn(error)
                     allowed = false;
                 });
             }

@@ -54,13 +54,14 @@ export default class NeutralView extends Component {
     };
 
     onDoneFromOtherScreen = () => {
+        Utility.log(NeonHandler.getOptions().selectedImages)
         this.setState({
             data: [...NeonHandler.getOptions().selectedImages],
         });
     };
 
     onImageCancelPress = (item, index) => {
-        console.log(this.state.data);
+        Utility.log(this.state.data);
         let newData = [];
         for (let i = 0; i < this.state.data.length; i++) {
             if (i !== index) {
@@ -74,17 +75,17 @@ export default class NeutralView extends Component {
     };
 
     onImagePress = (item, index) => {
+        NeonHandler.changeSelectedImages(this.state.data);
         this.props.navigation.navigate(PageKeys.image_review, {
             itemData: item,
             selectedIndex: index,
-            data: [...NeonHandler.getOptions().selectedImages],
             onDoneFromReview: this.onDoneFromOtherScreen,
         });
     };
 
     onSubmit = () => {
         let returnData = Utility.checkForMandatoryImagesTaken();
-        console.log(returnData);
+        Utility.log(returnData);
         if (returnData.status) {
             self.returnDataToApp(false);
         } else {
@@ -222,7 +223,7 @@ export default class NeutralView extends Component {
                     iconMap={actionBarProps.rightIcons}
                     styleAttributes={actionBarProps.styleAttr}/>
                 <View style={{flexDirection: 'row', height: 80}}>
-                    {NeonHandler.getOptions().showCameraOnNeutral &&
+                    {!NeonHandler.getOptions().hideCameraButtonInNeutral &&
                     <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                         <TouchableOpacity onPress={this.onCameraPress}
                                           style={{flexDirection: 'row', alignItems: 'center'}}>
@@ -230,7 +231,7 @@ export default class NeutralView extends Component {
                             <Text style={{fontSize: 16, paddingLeft: 10, color: 'black'}}>{Strings.CAMERA}</Text>
                         </TouchableOpacity>
                     </View>}
-                    {NeonHandler.getOptions().showGalleryOnNeutral &&
+                    {!NeonHandler.getOptions().hideGalleryButtonInNeutral &&
                     <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
                         <TouchableOpacity onPress={this.onGalleryPress}
                                           style={{flexDirection: 'row', alignItems: 'center'}}>

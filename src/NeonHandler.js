@@ -1,4 +1,5 @@
 import * as ImagePicker from './index';
+import * as Utility from "./Utility";
 
 export var NeonHandler = (function () {
     var neonData;
@@ -7,7 +8,6 @@ export var NeonHandler = (function () {
         return {
             colorPrimary: '#DC592B',
             colorPrimaryDark: '#BA4824',
-            maxSize: 0,
             autoConvertPath: false,
             assetType: 'Photos',
             groupTypes: 'All',
@@ -34,6 +34,7 @@ export var NeonHandler = (function () {
             maxSizeTakeAlert: (number) => 'You can only take ' + number + ' photos at most',
             maxSizeForTagTakeAlert: (tag, number) => 'You can only take ' + number + ' photos for ' + tag,
             initialRoute: undefined,
+            maxSize: 0,
             libraryMode: ImagePicker.LIBRARY_MODE.HARD,
             sideType: ImagePicker.CAMERA_TYPE.REAR,
             flashMode: ImagePicker.FLASH_MODE.AUTO,
@@ -45,8 +46,8 @@ export var NeonHandler = (function () {
             flashEnabled: true,
             cameraSwitchEnabled: true,
             callback: undefined,
-            showCameraOnNeutral: true,
-            showGalleryOnNeutral: true,
+            hideCameraButtonInNeutral: false,
+            hideGalleryButtonInNeutral: false,
             cameraToGallerySwitch: false,
             galleryToCameraSwitch: false,
             cameraOrientation: ImagePicker.ORIENTATION.PORTRAIT,
@@ -57,7 +58,8 @@ export var NeonHandler = (function () {
             imageWidth: undefined,
             showTagCoachImage: false,
             showPreviewOnCamera: false,
-            locationRestrictive: false
+            locationRestrictive: false,
+            consoleEnabled: false
         };
     }
 
@@ -84,9 +86,9 @@ export var NeonHandler = (function () {
         },
         deleteLastImage: function (items) {
             if (neonData) {
-                console.log(neonData.selectedImages.length);
+                Utility.log(neonData.selectedImages.length);
                 neonData.selectedImages = neonData.selectedImages.slice(0,neonData.selectedImages.length - 1);
-                console.log(neonData.selectedImages.length);
+                Utility.log(neonData.selectedImages.length);
             }
         },
         deleteImageBySubCat: function (subCatId, bankId, index, isAll) {

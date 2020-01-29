@@ -56,14 +56,14 @@ export default class CameraView extends Component {
 
     _handleAppStateChange = (nextAppState) => {
         if (this.state.appState.match(/active/)) {
-            console.log('App is in background');
+            Utility.log('App is in background');
         }
         if (this.state.appState.match(/inactive|background/) && nextAppState === 'active') {
             if (this.state.settingsActive) {
                 this.checkForLocationRestriction();
                 this.state.settingsActive = false;
             }
-            console.log('App has come to the foreground!');
+            Utility.log('App has come to the foreground!');
         }
         this.state.appState = nextAppState;
     };
@@ -76,7 +76,7 @@ export default class CameraView extends Component {
         } else {
             Orientation.lockToPortrait();
         }
-        let destPath = NeonHandler.getOptions().folderName ? RNFS.ExternalStorageDirectoryPath + '/' + NeonHandler.getOptions().appName + '/' + NeonHandler.getOptions().folderName : RNFS.ExternalStorageDirectoryPath + '/' + NeonHandler.getOptions().appName;
+        let destPath = NeonHandler.getOptions().folderName ? RNFS.ExternalStorageDirectoryPath + '/' + NeonHandler.getOptions().appName.replace(/ /g, '') + '/' + NeonHandler.getOptions().folderName.replace(/ /g, '') : RNFS.ExternalStorageDirectoryPath + '/' + NeonHandler.getOptions().appName.replace(/ /g, '');
         RNFS.mkdir(destPath.toString()).then(() => {
 
         });
@@ -96,7 +96,7 @@ export default class CameraView extends Component {
                 if (position || position.coords || position.coords.latitude || position.coords.longitude) {
                     self.location = position;
                 }
-                console.log(position);
+                Utility.log(position);
                 self.getLocationUpdates();
             },
             (error) => {
@@ -125,7 +125,7 @@ export default class CameraView extends Component {
 
             }
         }
-        console.log(error);
+        Utility.log(error);
     };
 
     openLocationSettingDialog() {
@@ -149,10 +149,10 @@ export default class CameraView extends Component {
                 if (position || position.coords || position.coords.latitude || position.coords.longitude) {
                     self.location = position;
                 }
-                console.log(position);
+                Utility.log(position);
             },
             (error) => {
-                console.log(error);
+                Utility.log(error);
             },
             {enableHighAccuracy: true, distanceFilter: 0, interval: 5000, fastestInterval: 2000},
         );
@@ -245,11 +245,11 @@ export default class CameraView extends Component {
                 fixOrientation: true,
                 forceUpOrientation: true,
                 captureTarget: '1',
-                writeExif: {'Make': NeonHandler.getOptions().appName},
+                writeExif: {'Make': NeonHandler.getOptions().appName.replace(/ /g, '')},
                 quality: 1,
                 ...NeonHandler.getOptions().pictureOptions,
             });
-            console.log('from camera', item);
+            Utility.log('from camera', item);
             /*if (Platform.OS === 'ios') {
                 if (item.uri.startsWith('file://')) {
                     item.uri = item.uri.substring(7);
@@ -263,13 +263,15 @@ export default class CameraView extends Component {
                 filePath = resizeResponse.uri;
                 filePath1 = resizeResponse.uri;
             }
-            console.log('after resize', filePath, filePath1);
-            let destPath = NeonHandler.getOptions().folderName ? RNFS.ExternalStorageDirectoryPath + '/' + NeonHandler.getOptions().appName + '/' + NeonHandler.getOptions().folderName + '/' + filePath1.split('/').pop() : RNFS.ExternalStorageDirectoryPath + '/' + NeonHandler.getOptions().appName + '/' + filePath1.split('/').pop();
+            Utility.log('after resize', filePath, filePath1);
+            let destPath = NeonHandler.getOptions().folderName ? RNFS.ExternalStorageDirectoryPath + '/' + NeonHandler.getOptions().appName.replace(/ /g, '') + '/' + NeonHandler.getOptions().folderName.replace(/ /g, '') + '/' + filePath1.split('/').pop() : RNFS.ExternalStorageDirectoryPath + '/' + NeonHandler.getOptions().appName.replace(/ /g, '') + '/' + filePath1.split('/').pop();
+            Utility.log('destination path', destPath)
             await RNFS.moveFile(filePath, destPath).then(() => {
                 fileInfo.filePath = destPath;
                 AndroidModule.scanFile(destPath);
-            }).catch(() => {
+            }).catch((error) => {
                 fileInfo.filePath = filePath;
+                console.warn(error)
             });
             if (tagEnabled) {
                 fileInfo.fileTag = currentTag;
@@ -328,19 +330,19 @@ export default class CameraView extends Component {
                 width = NeonHandler.getOptions().imageWidth ? NeonHandler.getOptions().imageWidth : 1200;
                 height = NeonHandler.getOptions().imageHeight ? NeonHandler.getOptions().imageHeight : 900;
             } else {
-                width = NeonHandler.getOptions().imageWidth ? NeonHandler.getOptions().imageWidth : 1200;
-                height = NeonHandler.getOptions().imageHeight ? NeonHandler.getOptions().imageHeight : 900;
+                width = NeonHandler.getOptions().imageWidth ? NeonHandler.getOptions().imageWidth : 900;
+                height = NeonHandler.getOptions().imageHeight ? NeonHandler.getOptions().imageHeight : 1200;
             }
-            ImageResizer.createResizedImage(imageUri, width, height, 'JPEG', NeonHandler.getOptions().quality, NeonHandler.getOptions().appName).then((response) => {
+            ImageResizer.createResizedImage(imageUri, width, height, 'JPEG', NeonHandler.getOptions().quality, NeonHandler.getOptions().appName.replace(/ /g, '')).then((response) => {
                 // response.uri is the URI of the new image that can now be displayed, uploaded...
                 // response.path is the path of the new image
                 // response.name is the name of the new image with the extension
                 // response.size is the size of the new image
-                console.log('from resize', response);
+                Utility.log('from resize', response);
                 resolve(response);
             }).catch((err) => {
-                console.log(err);
-                resolve(err);
+                Utility.log(err);
+                resolve(undefined);
                 // Oops, something went wrong. Check that the filename is correct and
                 // inspect err to get more details.
             });
@@ -348,11 +350,11 @@ export default class CameraView extends Component {
     };
 
     deleteImage = (filePath) => {
-        console.log('for delete', filePath);
+        Utility.log('for delete', filePath);
         RNFS.unlink(filePath).then(result => {
-            console.log('image deleted', JSON.stringify(result));
+            Utility.log('image deleted', JSON.stringify(result));
         }).catch(err => {
-            console.log(err);
+            Utility.log(err);
         });
     };
 

@@ -10,7 +10,7 @@ import React, {Component} from 'react';
 import {
     View,
     Text,
-    TouchableOpacity, ScrollView
+    TouchableOpacity, ScrollView, Image
 } from 'react-native';
 import * as ImagePicker from './src';
 
@@ -33,9 +33,7 @@ class App extends Component {
     };
 
     openCameraFront = () => {
-        ImagePicker.openCamera({
-            callback: this.onImageCollection,
-            navigation: this.props.navigation,
+        ImagePicker.openCamera(this.props.navigation,{
             resultRoute: 'app',
             alreadyAddedImages: this.state.data,
             tagEnabled: false,
@@ -45,13 +43,11 @@ class App extends Component {
             flashEnabled: false,
             folderName: 'ABC123',
             showPreviewOnCamera: false
-        });
+        },this.onImageCollection);
     };
 
     openCamera = () => {
-        ImagePicker.openCamera({
-            callback: this.onImageCollection,
-            navigation: this.props.navigation,
+        ImagePicker.openCamera(this.props.navigation,{
             resultRoute: 'app',
             alreadyAddedImages: this.state.data,
             tagEnabled: false,
@@ -59,13 +55,11 @@ class App extends Component {
             showPreviewOnCamera: false,
             locationRestrictive: true,
             tagList: [{tagName: 'abc', mandatory: true, tagId:1, numberOfPhotos: 1},{tagName: 'abcd', tagId:2, numberOfPhotos: 1},{tagName: 'abcde',mandatory: true, tagId:3, numberOfPhotos: 1},{tagName: 'abcdef', tagId: 4, numberOfPhotos: 1}]
-        });
+        },this.onImageCollection);
     };
 
     openCameraHz = () => {
-        ImagePicker.openCamera({
-            callback: this.onImageCollection,
-            navigation: this.props.navigation,
+        ImagePicker.openCamera(this.props.navigation,{
             resultRoute: 'app',
             alreadyAddedImages: this.state.data,
             tagEnabled: false,
@@ -73,24 +67,20 @@ class App extends Component {
             folderName: 'ABC123',
             showPreviewOnCamera: true,
             tagList: [{tagName: 'abc', mandatory: true, tagId:1, numberOfPhotos: 1},{tagName: 'abcd', tagId:2, numberOfPhotos: 1},{tagName: 'abcde',mandatory: true, tagId:3, numberOfPhotos: 1},{tagName: 'abcdef', tagId: 4, numberOfPhotos: 1}]
-        });
+        },this.onImageCollection);
     };
 
     openGallery = () => {
-        ImagePicker.openGallery({
-            callback: this.onImageCollection,
-            navigation: this.props.navigation,
+        ImagePicker.openGallery(this.props.navigation,{
             resultRoute: 'app',
             alreadyAddedImages: this.state.data,
             tagEnabled: false,
             tagList: [{tagName: 'abc', mandatory: true, tagId:1},{tagName: 'abcd', tagId:2},{tagName: 'abcde',mandatory: true, tagId:3},{tagName: 'abcdef', tagId: 4}]
-        });
+        }, this.onImageCollection);
     };
 
     openNeutralTag = () => {
-        ImagePicker.openNeutral({
-            callback: this.onImageCollection,
-            navigation: this.props.navigation,
+        ImagePicker.openNeutral(this.props.navigation,{
             resultRoute: 'app',
             alreadyAddedImages: this.state.data,
             tagEnabled: true,
@@ -98,20 +88,18 @@ class App extends Component {
             showPreviewOnCamera: true,
             cameraOrientation: ImagePicker.ORIENTATION.LANDSCAPE,
             tagList: [{tagName: 'abc', mandatory: true, tagId:1, numberOfPhotos: 1, tagPreviewUrl: 'https://www.beamng.com/attachments/20190126211632_1-jpg.517392/'},{tagName: 'abcd', tagId:2},{tagName: 'abcde',mandatory: true, tagId:3},{tagName: 'abcdef', tagId: 4, tagPreviewUrl: 'https://www.beamng.com/attachments/20190126211632_1-jpg.517392/'}]
-        });
+        },this.onImageCollection);
     };
 
     openNeutral = () => {
-        ImagePicker.openNeutral({
-            callback: this.onImageCollection,
-            navigation: this.props.navigation,
+        ImagePicker.openNeutral(this.props.navigation,{
             resultRoute: 'app',
             alreadyAddedImages: this.state.data,
             tagEnabled: false,
             showTagCoachImage: false,
             showPreviewOnCamera: false,
             cameraOrientation: ImagePicker.ORIENTATION.PORTRAIT
-        });
+        }, this.onImageCollection);
     };
 
     render() {

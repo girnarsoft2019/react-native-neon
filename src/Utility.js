@@ -122,8 +122,14 @@ export function getUriFromLocalFilePath(path) {
 
 export function openLocationSetting() {
     try {
-        (Platform.OS === 'ios') ? Linking.openURL('App-prefs:') : AndroidModule.locationSettings();
+        AndroidModule.locationSettings();
     } catch (err) {
         console.error(err);
+    }
+}
+
+export function log() {
+    if(NeonHandler.getOptions().consoleEnabled){
+        console.log(...arguments);
     }
 }
