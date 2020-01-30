@@ -96,8 +96,8 @@ export function prepareReturnData(fromBack) {
 }
 
 export function returnDataToApp(fromBack, props) {
-    NeonHandler.getOptions().callback && NeonHandler.getOptions().callback(prepareReturnData(fromBack));
     props.navigation.goBack();
+    NeonHandler.getOptions().callback && NeonHandler.getOptions().callback(prepareReturnData(fromBack));
 }
 
 

@@ -201,8 +201,8 @@ export default class CameraView extends Component {
     };
 
     returnDataToApp = (fromBack) => {
-        NeonHandler.getOptions().callback && NeonHandler.getOptions().callback(Utility.prepareReturnData(fromBack));
         self.props.navigation.goBack();
+        NeonHandler.getOptions().callback && NeonHandler.getOptions().callback(Utility.prepareReturnData(fromBack));
 
     };
 

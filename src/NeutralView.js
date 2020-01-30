@@ -94,8 +94,8 @@ export default class NeutralView extends Component {
     };
 
     returnDataToApp = (fromBack) => {
-        NeonHandler.getOptions().callback && NeonHandler.getOptions().callback(Utility.prepareReturnData(fromBack));
         this.props.navigation.goBack();
+        NeonHandler.getOptions().callback && NeonHandler.getOptions().callback(Utility.prepareReturnData(fromBack));
 
     };
 

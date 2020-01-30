@@ -88,8 +88,8 @@ export default class extends React.PureComponent {
     };
 
     returnDataToApp = (fromBack) => {
-        NeonHandler.getOptions().callback && NeonHandler.getOptions().callback(Utility.prepareReturnData(fromBack));
         self.props.navigation.goBack();
+        NeonHandler.getOptions().callback && NeonHandler.getOptions().callback(Utility.prepareReturnData(fromBack));
 
     };
 
