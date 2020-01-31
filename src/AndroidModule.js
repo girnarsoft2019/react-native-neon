@@ -5,7 +5,7 @@ export default MyModule;*/
 'use strict';
 import {Linking, NativeModules, Platform} from 'react-native';
 
-const AndroidNativeModule = NativeModules.AndroidModule;
+const AndroidNativeModule = NativeModules.AndroidModule2;
 
 function checkIfInitialized() {
     return AndroidNativeModule != null;

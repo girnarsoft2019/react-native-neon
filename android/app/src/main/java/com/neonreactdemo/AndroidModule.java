@@ -56,7 +56,7 @@ public class AndroidModule extends ReactContextBaseJavaModule {
 
     @Override
     public String getName() {
-        return "AndroidModule";
+        return "AndroidModule2";
     }
 
     @Override
