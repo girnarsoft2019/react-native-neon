@@ -12,7 +12,7 @@ import {
     Text,
     TouchableOpacity, ScrollView, Image
 } from 'react-native';
-import * as ImagePicker from 'react-native-neon';
+import * as ImagePicker from './src/index';
 
 class App extends Component {
     constructor() {
