@@ -10,6 +10,7 @@ import {
     Dimensions,
     BackHandler,
     Alert,
+    SafeAreaView
 } from 'react-native';
 import * as Strings from './values/Strings';
 import * as Colors from './values/Colors';
@@ -216,6 +217,7 @@ export default class NeutralView extends Component {
             },
         };
         return (
+            <SafeAreaView style={{flex: 1}}>
             <View style={{flex: 1}}>
                 <ActionBarWrapper
                     values={actionBarProps.values}
@@ -259,6 +261,7 @@ export default class NeutralView extends Component {
                     }}>SUBMIT</Text>
                 </TouchableOpacity>
             </View>
+                    </SafeAreaView>
         );
     }
 

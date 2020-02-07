@@ -3,6 +3,7 @@ require_relative '../node_modules/@react-native-community/cli-platform-ios/nativ
 
 target 'NeonReactDemo' do
   # Pods for NeonReactDemo
+  pod 'react-native-geolocation', path: '../node_modules/@react-native-community/geolocation'
   pod 'React', :path => '../node_modules/react-native/'
   pod 'React-Core', :path => '../node_modules/react-native/React'
   pod 'React-DevSupport', :path => '../node_modules/react-native/React'
