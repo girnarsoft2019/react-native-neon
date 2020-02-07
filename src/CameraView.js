@@ -12,7 +12,7 @@ import {
     ActivityIndicator,
     BackHandler,
     Modal,
-    AppState,
+    AppState, Animated,
 } from 'react-native';
 import {RNCamera} from 'react-native-camera';
 import {NeonHandler} from './NeonHandler';
@@ -51,6 +51,9 @@ export default class CameraView extends Component {
             currentTempFilInfo: undefined,
             moveToNextTag: false,
             settingsActive: false,
+            slideLeft: new Animated.Value(1),
+            slide: new Animated.Value(1),
+            toLeft: true,
         };
     }
 
@@ -171,7 +174,7 @@ export default class CameraView extends Component {
             for (let i = 0; i < tagList.length; i++) {
                 if (tagList[i].mandatory) {
                     if (!images.some(item => item.fileTag && item.fileTag.tagId && item.fileTag.tagId == tagList[i].tagId)) {
-                        self.setState({currentTagIndex: i});
+                        self.setState({currentTagIndex: i, toLeft: true, slide: new Animated.Value(0)}, self.animateText);
                         break;
                     }
                 }
@@ -265,13 +268,13 @@ export default class CameraView extends Component {
             }
             Utility.log('after resize', filePath, filePath1);
             let destPath = NeonHandler.getOptions().folderName ? RNFS.ExternalStorageDirectoryPath + '/' + NeonHandler.getOptions().appName.replace(/ /g, '') + '/' + NeonHandler.getOptions().folderName.replace(/ /g, '') + '/' + filePath1.split('/').pop() : RNFS.ExternalStorageDirectoryPath + '/' + NeonHandler.getOptions().appName.replace(/ /g, '') + '/' + filePath1.split('/').pop();
-            Utility.log('destination path', destPath)
+            Utility.log('destination path', destPath);
             await RNFS.moveFile(filePath, destPath).then(() => {
                 fileInfo.filePath = destPath;
                 AndroidModule.scanFile(destPath);
             }).catch((error) => {
                 fileInfo.filePath = filePath;
-                console.warn(error)
+                console.warn(error);
             });
             if (tagEnabled) {
                 fileInfo.fileTag = currentTag;
@@ -399,7 +402,9 @@ export default class CameraView extends Component {
             this.setState({
                 currentTagIndex: this.state.currentTagIndex + 1,
                 currentTempFilInfo: undefined,
-            });
+                toLeft: true,
+                slide: new Animated.Value(0),
+            }, this.animateText);
         } else {
             this._clickDone(false);
         }
@@ -409,7 +414,9 @@ export default class CameraView extends Component {
         this.setState({
             currentTagIndex: this.state.currentTagIndex - 1,
             currentTempFilInfo: undefined,
-        });
+            toLeft: false,
+            slide: new Animated.Value(0),
+        }, this.animateText);
     };
 
     onCancelPress = () => {
@@ -424,6 +431,15 @@ export default class CameraView extends Component {
         this.setState({
             showPreview: false,
         });
+    };
+
+    animateText = () => {
+        return Animated.parallel([
+            Animated.timing(this.state.slide, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            })]).start();
     };
 
     render() {
@@ -541,6 +557,33 @@ export default class CameraView extends Component {
     };
 
     _renderTagView = () => {
+        let {slide, slideLeft} = this.state;
+        let slideStyle = this.state.toLeft ?
+            {
+                transform: [
+                    {
+                        translateX: slide.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [Dimensions.get('window').width, 0],
+                        }),
+                    },
+                ],
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+            } : {
+                transform: [
+                    {
+                        translateX: slide.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [-Dimensions.get('window').width, 0],
+                        }),
+                    },
+                ],
+                flex: 1,
+                justifyContent: 'center',
+                alignItems: 'center',
+            };
         if (NeonHandler.getOptions().tagEnabled && NeonHandler.getOptions().tagList && NeonHandler.getOptions().tagList.length > 0) {
             let tag = NeonHandler.getOptions().tagList[this.state.currentTagIndex];
             let showNext = (NeonHandler.getOptions().tagList.length > 1) && (this.state.currentTagIndex !== (NeonHandler.getOptions().tagList.length - 1));
@@ -555,7 +598,7 @@ export default class CameraView extends Component {
                     height: 44,
                     flexDirection: 'row',
                     alignItems: 'center',
-                    elevation: 2,
+                    elevation: 3,
                 }}>
                     {showPrevious && <TouchableOpacity onPress={this.onPreviousPress} style={{
                         marginHorizontal: 10,
@@ -569,8 +612,13 @@ export default class CameraView extends Component {
                         <Image style={{height: 24, width: 24, transform: [{rotate: '180deg'}]}}
                                source={require('./images/arrow.png')}/>
                     </TouchableOpacity>}
-                    {<View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                        <Text style={{color: mandatory ? 'red' : 'white'}}>{mandatory ? '*' : ''}{tag.tagName}</Text>
+                    {<View style={{flex: 1, elevation: -1}}>
+                        <Animated.View
+                            style={slideStyle}
+                        >
+                            <Text
+                                style={{color: mandatory ? 'red' : 'white'}}>{mandatory ? '*' : ''}{tag.tagName}</Text>
+                        </Animated.View>
                     </View>}
                     {<TouchableOpacity onPress={() => this.onNextPress(showNext)} style={{
                         marginHorizontal: 10,
